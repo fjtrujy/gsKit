@@ -151,4 +151,12 @@ static inline int gsKit_float_to_int_y(const GSGLOBAL *gsGlobal, float fy)
 	return __gsKit_float_to_int_xy(fy, gsGlobal->OffsetY);
 }
 
+static inline u64 vertex_to_XYZ2(const GSGLOBAL *gsGlobal, float fx, float fy, int iz)
+{
+	int ix = gsKit_float_to_int_x(gsGlobal, fx);
+	int iy = gsKit_float_to_int_y(gsGlobal, fy);
+
+	return GS_SETREG_XYZ2(ix, iy, iz);
+}
+
 #endif /* __GSINLINE_H__ */

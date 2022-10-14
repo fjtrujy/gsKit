@@ -10,66 +10,17 @@
 //
 
 #include <gsKit.h>
+#include <gsInline.h>
 #include <dmaKit.h>
 #include <malloc.h>
+
+#include <time.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[])
 {
 	u64 White, Black, Red, Green, Blue, BlueTrans, RedTrans, GreenTrans, WhiteTrans;
 	GSGLOBAL *gsGlobal = gsKit_init_global();
-
-    //  By default the gsKit_init_global() uses an autodetected interlaced field mode
-    //  To set a new mode set these five variables for the resolution desired and
-    //  mode desired
-
-    //  Some examples
-    //  Make sure that gsGlobal->Height is a factor of the mode's gsGlobal->DH
-
-    // gsGlobal->Mode = GS_MODE_NTSC
-    // gsGlobal->Interlace = GS_INTERLACED;
-    // gsGlobal->Field = GS_FIELD;
-    // gsGlobal->Width = 640;
-    // gsGlobal->Height = 448;
-
-    // gsGlobal->Mode = GS_MODE_PAL;
-    // gsGlobal->Interlace = GS_INTERLACED;
-	// gsGlobal->Field = GS_FIELD;
-    // gsGlobal->Width = 640;
-    // gsGlobal->Height = 512;
-
-    // gsGlobal->Mode = GS_MODE_DTV_480P;
-    // gsGlobal->Interlace = GS_NONINTERLACED;
-    // gsGlobal->Field = GS_FRAME;
-    // gsGlobal->Width = 720;
-    // gsGlobal->Height = 480;
-
-    // gsGlobal->Mode = GS_MODE_DTV_1080I;
-    // gsGlobal->Interlace = GS_INTERLACED;
-    // gsGlobal->Field = GS_FIELD;
-    // gsGlobal->Width = 640;
-    // gsGlobal->Height = 540;
-    // gsGlobal->PSM = GS_PSM_CT16;
-    // gsGlobal->PSMZ = GS_PSMZ_16;
-    // gsGlobal->Dithering = GS_SETTING_ON;
-
-    //  A width of 640 would work as well
-    //  However a height of 720 doesn't seem to work well
-    // gsGlobal->Mode = GS_MODE_DTV_720P;
-    // gsGlobal->Interlace = GS_NONINTERLACED;
-    // gsGlobal->Field = GS_FRAME;
-    // gsGlobal->Width = 640;
-    // gsGlobal->Height = 360;
-    // gsGlobal->PSM = GS_PSM_CT16;
-    // gsGlobal->PSMZ = GS_PSMZ_16;
-
-	//  You can use these to turn off Z/Double Buffering. They are on by default.
-	//  gsGlobal->DoubleBuffering = GS_SETTING_OFF;
-	//  gsGlobal->ZBuffering = GS_SETTING_OFF;
-
-	//  This makes things look marginally better in half-buffer mode...
-	//  however on some CRT and all LCD, it makes a really horrible screen shake.
-	//  Uncomment this to disable it. (It is on by default)
-	//  gsGlobal->DoSubOffset = GS_SETTING_OFF;
 
 	gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
 
@@ -160,63 +111,76 @@ int main(int argc, char *argv[])
 
 	gsKit_set_test(gsGlobal, GS_ZTEST_OFF);
 
-	gsKit_prim_line_strip(gsGlobal, LineStripPtr, 6, 1, Black);
+	srand(time(NULL));   // Initialization, should only be called once.
+	
+	GSPRIMPOINT vertices[100];
 
-	gsKit_prim_triangle_strip(gsGlobal, TriStripPtr, 6, 1, Red);
 
-	gsKit_prim_line(gsGlobal, 525.0f, 125.0f, 575.0f, 125.0f, 1, Black);
-	gsKit_prim_line(gsGlobal, 550.0f, 150.0f, 600.0f, 100.0f, 1, Black);
 
-	gsKit_prim_point(gsGlobal, 575.0f, 75.0f, 1, Black);
-	gsKit_prim_point(gsGlobal, 600.0f, 100.0f, 1, Black);
-	gsKit_prim_point(gsGlobal, 625.0f, 125.0f, 1, Black);
+	for (int i = 0; i < 100; i++) {
+		int rx = rand() % gsGlobal->Width;
+		int ry = rand() % gsGlobal->Height;
+		vertices[i].vertex = vertex_to_XYZ2(gsGlobal, (float)rx, (float)ry, 1);
+		vertices[i].color = Black;
+	}
+	gsKit_prim_list_points(gsGlobal, 100, &vertices);	
 
-	gsKit_prim_quad(gsGlobal, 150.0f, 150.0f,
-				   150.0f, 400.0f,
-				   450.0f, 150.0f,
-				   450.0f, 400.0f, 2, Green);
+	// for (int i = 0; i < 100; i++) {
+	// 	int rx = rand() % gsGlobal->Width;
+	// 	int ry = rand() % gsGlobal->Height;
+	// 	gsKit_prim_point(gsGlobal, rx, ry, 1, Black);	
+	// }
 
-	gsKit_set_test(gsGlobal, GS_ZTEST_ON);
+	// gsKit_prim_point(gsGlobal, 50.0f, 50.0f, 1, Black);
+	// gsKit_prim_point(gsGlobal, 100.0f, 100.0f, 1, Red);
+	// gsKit_prim_point(gsGlobal, 200.0f, 200.0f, 1, Blue);
 
-	gsKit_prim_triangle_fan(gsGlobal, TriFanPtr, 8, 5, Black);
+	// gsKit_prim_quad(gsGlobal, 150.0f, 150.0f,
+	// 			   150.0f, 400.0f,
+	// 			   450.0f, 150.0f,
+	// 			   450.0f, 400.0f, 2, Green);
 
-	gsKit_prim_quad_gouraud(gsGlobal, 500.0f, 250.0f,
-					   500.0f, 350.0f,
-					   600.0f, 250.0f,
-					   600.0f, 350.0f, 2,
-					   Red, Green, Blue, Black);
+	// gsKit_set_test(gsGlobal, GS_ZTEST_ON);
 
-	gsKit_prim_triangle_gouraud(gsGlobal, 280.0f, 200.0f,
-					       280.0f, 350.0f,
-					       180.0f, 350.0f, 5,
-					       Blue, Red, White);
+	// gsKit_prim_triangle_fan(gsGlobal, TriFanPtr, 8, 5, Black);
 
-	// Temporarily apply a scissor box that covers only part of the red triangle
-	gsKit_set_scissor(gsGlobal, GS_SETREG_SCISSOR(300.0f, 350.0f, 200.0f, 400.0f));
-	gsKit_prim_triangle(gsGlobal, 300.0f, 200.0f, 300.0f, 350.0f, 400.0f, 350.0f, 3, Red);
-	gsKit_set_scissor(gsGlobal, GS_SCISSOR_RESET);
+	// gsKit_prim_quad_gouraud(gsGlobal, 500.0f, 250.0f,
+	// 				   500.0f, 350.0f,
+	// 				   600.0f, 250.0f,
+	// 				   600.0f, 350.0f, 2,
+	// 				   Red, Green, Blue, Black);
 
-	gsKit_prim_sprite(gsGlobal, 400.0f, 100.0f, 500.0f, 200.0f, 5, Red);
+	// gsKit_prim_triangle_gouraud(gsGlobal, 280.0f, 200.0f,
+	// 				       280.0f, 350.0f,
+	// 				       180.0f, 350.0f, 5,
+	// 				       Blue, Red, White);
+
+	// // Temporarily apply a scissor box that covers only part of the red triangle
+	// gsKit_set_scissor(gsGlobal, GS_SETREG_SCISSOR(300.0f, 350.0f, 200.0f, 400.0f));
+	// gsKit_prim_triangle(gsGlobal, 300.0f, 200.0f, 300.0f, 350.0f, 400.0f, 350.0f, 3, Red);
+	// gsKit_set_scissor(gsGlobal, GS_SCISSOR_RESET);
+
+	// gsKit_prim_sprite(gsGlobal, 400.0f, 100.0f, 500.0f, 200.0f, 5, Red);
 
 	gsKit_mode_switch(gsGlobal, GS_ONESHOT);
 
 	while(1)
 	{
-		if( y <= 10  && (x + width) < (gsGlobal->Width - 10))
-			x+=10;
-		else if( (y + height)  <  (VHeight - 10) && (x + width) >= (gsGlobal->Width - 10) )
-			y+=10;
-		else if( (y + height) >=  (VHeight - 10) && x > 10 )
-			x-=10;
-		else if( y > 10 && x <= 10 )
-			y-=10;
+		// if( y <= 10  && (x + width) < (gsGlobal->Width - 10))
+		// 	x+=10;
+		// else if( (y + height)  <  (VHeight - 10) && (x + width) >= (gsGlobal->Width - 10) )
+		// 	y+=10;
+		// else if( (y + height) >=  (VHeight - 10) && x > 10 )
+		// 	x-=10;
+		// else if( y > 10 && x <= 10 )
+		// 	y-=10;
 
-		gsKit_prim_sprite(gsGlobal, x, y, x + width, y + height, 4, BlueTrans);
+		// gsKit_prim_sprite(gsGlobal, x, y, x + width, y + height, 4, BlueTrans);
 
-		// RedTrans must be a oneshot for proper blending!
-		gsKit_prim_sprite(gsGlobal, 100.0f, 100.0f, 200.0f, 200.0f, 5, RedTrans);
-		gsKit_prim_sprite(gsGlobal, 100.0f, 200.0f, 250.0f, 250.0f, 5, GreenTrans);
-		gsKit_prim_sprite(gsGlobal, 200.0f, 250.0f, 275.0f, 275.0f, 5, WhiteTrans);
+		// // RedTrans must be a oneshot for proper blending!
+		// gsKit_prim_sprite(gsGlobal, 100.0f, 100.0f, 200.0f, 200.0f, 5, RedTrans);
+		// gsKit_prim_sprite(gsGlobal, 100.0f, 200.0f, 250.0f, 250.0f, 5, GreenTrans);
+		// gsKit_prim_sprite(gsGlobal, 200.0f, 250.0f, 275.0f, 275.0f, 5, WhiteTrans);
 
 		gsKit_queue_exec(gsGlobal);
 

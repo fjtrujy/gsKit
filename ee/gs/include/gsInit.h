@@ -1041,6 +1041,16 @@ struct gsTexture
 };
 typedef struct gsTexture GSTEXTURE;
 
+/// gsKit Point Primitive Structure
+/// This structure holds all relevant data for any
+/// given point object, regardless of original format or type.
+struct gsPrimPoint
+{
+	u64 color;		///< Point color in RGBAQ format
+	u64 vertex;		///< Vertex in XYZ2 format
+};
+typedef struct gsPrimPoint GSPRIMPOINT;
+
 /// Alternative Access Method to the GS CSR Register
 struct gsRegisters {
  u64 SIGNAL:      1 __attribute__((packed)); /* ro */
