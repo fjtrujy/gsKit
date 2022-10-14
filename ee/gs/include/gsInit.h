@@ -1041,6 +1041,70 @@ struct gsTexture
 };
 typedef struct gsTexture GSTEXTURE;
 
+// /// gsKit Point Primitive Structure
+// /// This structure holds all relevant data for any
+// /// given point object, regardless of original format or type.
+// struct gsPrimPoint
+// {
+// 	u64 color;		///< Point color in RGBAQ format
+// 	u64 vertex;		///< Vertex in XYZ2 format
+// };
+// typedef struct gsPrimPoint GSPRIMPOINT;
+
+/// gsKit Triangle Primitive Structure
+/// This structure holds all relevant data for any
+/// given triangle object, regardless of original format or type.
+typedef union {
+	u64 xyz;
+	struct {
+		u16 x;
+		u16 y;
+		u32 z;
+	};
+} __attribute__((packed,aligned(8))) gs_xyz_t;
+
+typedef union {
+	u64 rgbaq;
+	struct {
+		u8 r;
+		u8 g;
+		u8 b;
+		u8 a;
+		float q;
+	};
+} __attribute__((packed,aligned(8))) gs_color_t;
+
+typedef union {
+	u128 xyz2;
+	struct {
+		gs_xyz_t xyz;
+		u64 tag;
+	};
+} __attribute__((packed,aligned(8))) gs_xyz2;
+
+typedef union {
+	u128 rgbaq;
+	struct {
+		gs_color_t color;
+		u64 tag;
+	};
+} __attribute__((packed,aligned(8))) gs_rgbaq;
+
+struct gsPrimPoint
+{
+	gs_rgbaq rgbaq;
+	gs_xyz2 xyz2;
+};
+typedef struct gsPrimPoint GSPRIMPOINT;
+
+struct gsPrimTriangle
+{
+	GSPRIMPOINT p1;
+	GSPRIMPOINT p2;
+	GSPRIMPOINT p3;
+};
+typedef struct gsPrimTriangle GSPRIMTRIANGLE;
+
 /// Alternative Access Method to the GS CSR Register
 struct gsRegisters {
  u64 SIGNAL:      1 __attribute__((packed)); /* ro */
