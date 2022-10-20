@@ -151,12 +151,17 @@ static inline int gsKit_float_to_int_y(const GSGLOBAL *gsGlobal, float fy)
 	return __gsKit_float_to_int_xy(fy, gsGlobal->OffsetY);
 }
 
-static inline u64 vertex_to_XYZ2(const GSGLOBAL *gsGlobal, float fx, float fy, int iz)
+static inline u128 vertex_to_XYZ2(const GSGLOBAL *gsGlobal, float fx, float fy, int iz)
 {
 	int ix = gsKit_float_to_int_x(gsGlobal, fx);
 	int iy = gsKit_float_to_int_y(gsGlobal, fy);
 
-	return GS_SETREG_XYZ2(ix, iy, iz);
+	return ((u128) GS_SETREG_XYZ2(ix, iy, iz)) | (((u128)GS_XYZ2) << 64)
+}
+
+static inline u128 color_to_RGBAQ(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+	return ((u128) GS_SETREG_RGBAQ(r, g, b, a, 0x00)) | (((u128)GS_RGBAQ) << 64)
 }
 
 #endif /* __GSINLINE_H__ */

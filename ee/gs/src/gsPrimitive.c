@@ -59,27 +59,27 @@ void gsKit_prim_point(GSGLOBAL *gsGlobal, float x, float y, int iz, u64 color)
 
 void gsKit_prim_list_points(GSGLOBAL *gsGlobal, int count, const void *vertices)
 {
-	u64* p_store;
-	u64* p_data;
+	// u64* p_store;
+	// u64* p_data;
 	
-	int bytes = count * sizeof(GSPRIMPOINT);
-	printf("Bytes used %i\n", bytes);
-	int qsize = count + 1;
-	int bsize = qsize * 16;
+	// int bytes = count * sizeof(GSPRIMPOINT);
+	// printf("Bytes used %i\n", bytes);
+	// int qsize = count + 1;
+	// int bsize = qsize * 16;
 
-	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, bsize, GSKIT_GIF_PRIM_POINT);
+	// p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, bsize, GSKIT_GIF_PRIM_POINT);
 
-	if(p_store == gsGlobal->CurQueue->last_tag)
-	{
-		*p_data++ = GIF_TAG_POINT_CUSTOM(count);
-		*p_data++ = GIF_TAG_POINT_REGS_CUSTOM;
-	}
+	// if(p_store == gsGlobal->CurQueue->last_tag)
+	// {
+	// 	*p_data++ = GIF_TAG_POINT_CUSTOM(count);
+	// 	*p_data++ = GIF_TAG_POINT_REGS_CUSTOM;
+	// }
 
-	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_POINT, 0, 0, gsGlobal->PrimFogEnable,
-					gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
-					0, gsGlobal->PrimContext, 0) ;
+	// *p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_POINT, 0, 0, gsGlobal->PrimFogEnable,
+	// 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
+	// 				0, gsGlobal->PrimContext, 0) ;
 
-	memcpy(p_data, vertices, bytes);
+	// memcpy(p_data, vertices, bytes);
 }
 #endif
 
@@ -473,6 +473,36 @@ void gsKit_prim_triangle_gouraud_3d(GSGLOBAL *gsGlobal, float x1, float y1, int 
 
 	*p_data++ = color3;
 	*p_data++ = GS_SETREG_XYZ2(ix3, iy3, iz3);
+}
+#endif
+
+#if F_gsKit_prim_list_triangle_gouraud_3d
+void gsKit_prim_list_triangle_gouraud_3d(GSGLOBAL *gsGlobal, int count, const void *vertices)
+{
+	u64* p_store;
+	u64* p_data;
+	int qsize = (count*2) + 2;
+	int bytes = count * sizeof(GSPRIMPOINT);
+
+	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize*16), GIF_AD);
+
+	*p_data++ = GIF_TAG_AD(qsize);
+	*p_data++ = GIF_AD;
+
+
+	if(p_store == gsGlobal->CurQueue->last_tag)
+	{
+		*p_data++ = GIF_TAG_TRIANGLE_GOURAUD(count-1);
+		*p_data++ = GIF_TAG_TRIANGLE_GOURAUD_REGS;
+	}
+
+	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRIANGLE, 1, 0, gsGlobal->PrimFogEnable,
+				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
+				0, gsGlobal->PrimContext, 0);
+
+	*p_data++ = GS_PRIM;
+
+	memcpy(p_data, vertices, bytes);
 }
 #endif
 
