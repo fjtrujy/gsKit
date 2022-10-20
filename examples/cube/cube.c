@@ -1,13 +1,13 @@
-/*
-# _____     ___ ____     ___ ____
-#  ____|   |    ____|   |        | |____|
-# |     ___|   |____ ___|    ____| |    \    PS2DEV Open Source Project.
-#-----------------------------------------------------------------------
-# (c) 2022 Daniel Santos
-# Licenced under Academic Free License version 2.0
-# Review ps2sdk README & LICENSE files for further details.
-#
-*/
+//  ____     ___ |    / _____ _____
+// |  __    |    |___/    |     |
+// |___| ___|    |    \ __|__   |     gsKit Open Source Project.
+// ----------------------------------------------------------------------
+// Copyright 2022 - Daniel Santos <danielsantos346@gmail.com>
+// Licenced under Academic Free License version 2.0
+// Review gsKit README & LICENSE files for further details.
+//
+// cube.c - Example demonstrating gsKit 3D with triangle list operation.
+//
 
 #include <kernel.h>
 #include <stdlib.h>
@@ -76,10 +76,12 @@ GSGLOBAL* init_graphics()
 
 }
 
-void gsKit_prim_triangles_gouraud_3d(GSGLOBAL *gsGlobal, xyz_t* verts, color_t* colors, int count)
+void gsKit_prim_triangles_gouraud_3d(GSGLOBAL *gsGlobal, int count, void* vertices)
 {
 	u64* p_store;
 	u64* p_data;
+
+	int bytes = count * sizeof(GSPRIMTRIANGLE);
 	int qsize = (count*2) + 2;
 
 	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize*16), GIF_AD);
@@ -100,26 +102,7 @@ void gsKit_prim_triangles_gouraud_3d(GSGLOBAL *gsGlobal, xyz_t* verts, color_t* 
 
 	*p_data++ = GS_PRIM;
 
-	for(int i = 0; i < count; i+=3){
-
-		*p_data++ = colors[i+0].rgbaq;
-		*p_data++ = GS_RGBAQ;
-
-		*p_data++ = verts[i+0].xyz;
-		*p_data++ = GS_XYZ2;
-
-		*p_data++ = colors[i+1].rgbaq;
-		*p_data++ = GS_RGBAQ;
-		
-		*p_data++ = verts[i+1].xyz;
-		*p_data++ = GS_XYZ2;
-
-		*p_data++ = colors[i+2].rgbaq;
-		*p_data++ = GS_RGBAQ;
-
-		*p_data++ = verts[i+2].xyz;
-		*p_data++ = GS_XYZ2;
-	}
+	memcpy(p_data, vertices, bytes);
 }
 
 int render(GSGLOBAL* gsGlobal)
@@ -136,6 +119,7 @@ int render(GSGLOBAL* gsGlobal)
 	xyz_t   *verts;
 	color_t *colors;
 
+	GSPRIMTRIANGLE *gs_vertices = (GSPRIMTRIANGLE *)memalign(128, sizeof(GSPRIMTRIANGLE) * points_count);
 
 	VECTOR *c_verts = (VECTOR *)memalign(128, sizeof(VECTOR) * points_count);
 	VECTOR* c_colours = (VECTOR *)memalign(128, sizeof(VECTOR) * points_count);
@@ -190,14 +174,24 @@ int render(GSGLOBAL* gsGlobal)
 		calculate_vertices(temp_vertices, points_count, c_verts, local_screen);
 
 		// Convert floating point vertices to fixed point and translate to center of screen.
-		draw_convert_xyz(verts, 2048+320, 2048-256, 16, points_count, (vertex_f_t*)temp_vertices);
+		draw_convert_xyz(verts, 2048+320, 2048-224, 16, points_count, (vertex_f_t*)temp_vertices);
 
 		// Convert floating point colours to fixed point.
 		draw_convert_rgbq(colors, points_count, (vertex_f_t*)temp_vertices, (color_f_t*)c_colours, 0x80);
 
-		gsKit_clear(gsGlobal, BLACK_RGBAQ);
+		for (int i = 0, j = 0; i < points_count/3 && j < points_count; i++, j+=3)
+		{
+			gs_vertices[i].p1.rgbaq = color_to_RGBAQ(colors[j+0].r, colors[j+0].g, colors[j+0].b, colors[j+0].a);
+			gs_vertices[i].p1.xyz2 = vertex_to_XYZ2(gsGlobal, temp_vertices[j+0][0], temp_vertices[j+0][1], verts[j+0].z);
 
-		// gsKit_prim_triangles_gouraud_3d(gsGlobal, verts, colors, points_count);
+			gs_vertices[i].p2.rgbaq = color_to_RGBAQ(colors[j+1].r, colors[j+1].g, colors[j+1].b, colors[j+1].a);
+			gs_vertices[i].p2.xyz2 = vertex_to_XYZ2(gsGlobal, temp_vertices[j+1][0], temp_vertices[j+1][1], verts[j+1].z);
+
+			gs_vertices[i].p3.rgbaq = color_to_RGBAQ(colors[j+2].r, colors[j+2].g, colors[j+2].b, colors[j+2].a);
+			gs_vertices[i].p3.xyz2 = vertex_to_XYZ2(gsGlobal, temp_vertices[j+2][0], temp_vertices[j+2][1], verts[j+2].z);
+		}
+
+		gsKit_clear(gsGlobal, BLACK_RGBAQ);
 
 		gsKit_prim_list_triangle_gouraud_3d(gsGlobal, points_count, gs_vertices);
 
