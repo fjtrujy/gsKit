@@ -39,6 +39,7 @@ void gsKit_prim_line_3d(GSGLOBAL *gsGlobal,	float x1, float y1, int iz1,
 						float x2, float y2, int iz2, u64 color);
 
 void gsKit_prim_line_goraud_3d(GSGLOBAL *gsGlobal, float x1, float y1, int iz1, float x2, float y2, int iz2, u64 color1, u64 color2);
+void gsKit_prim_list_line_goraud_3d(GSGLOBAL *gsGlobal, int count, const void *vertices);
 
 void gsKit_prim_line_strip(GSGLOBAL *gsGlobal, float *LineStrip, int segments, int iz, u64 color);
 

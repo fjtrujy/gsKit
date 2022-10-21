@@ -43,43 +43,32 @@ void gsKit_prim_point(GSGLOBAL *gsGlobal, float x, float y, int iz, u64 color)
 #endif
 
 #if F_gsKit_prim_list_points
-
-#define GIF_TAG_POINT_CUSTOM(NLOOP)   \
-		((u64)(NLOOP)		<< 0)	| \
-		((u64)(0)		<< 15)	| \
-		((u64)(0)		<< 46)	| \
-		((u64)(0)		<< 47)	| \
-		((u64)(0)		<< 58)	| \
-		((u64)(3)		<< 60);
-
-#define GIF_TAG_POINT_REGS_CUSTOM   \
-		((u64)(GS_PRIM)		<< 0)	| \
-		((u64)(GS_RGBAQ)	<< 4)	| \
-		((u64)(GS_XYZ2)		<< 8);
-
 void gsKit_prim_list_points(GSGLOBAL *gsGlobal, int count, const void *vertices)
 {
-	// u64* p_store;
-	// u64* p_data;
-	
-	// int bytes = count * sizeof(GSPRIMPOINT);
-	// printf("Bytes used %i\n", bytes);
-	// int qsize = count + 1;
-	// int bsize = qsize * 16;
+	u64* p_store;
+	u64* p_data;
+	int qsize = (count*2) + 2;
+	int bytes = count * sizeof(GSPRIMPOINT);
 
-	// p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, bsize, GSKIT_GIF_PRIM_POINT);
+	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize*16), GIF_AD);
 
-	// if(p_store == gsGlobal->CurQueue->last_tag)
-	// {
-	// 	*p_data++ = GIF_TAG_POINT_CUSTOM(count);
-	// 	*p_data++ = GIF_TAG_POINT_REGS_CUSTOM;
-	// }
+	*p_data++ = GIF_TAG_AD(qsize);
+	*p_data++ = GIF_AD;
 
-	// *p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_POINT, 0, 0, gsGlobal->PrimFogEnable,
-	// 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
-	// 				0, gsGlobal->PrimContext, 0) ;
 
-	// memcpy(p_data, vertices, bytes);
+	if(p_store == gsGlobal->CurQueue->last_tag)
+	{
+		*p_data++ = GIF_TAG_POINT(count-1);
+		*p_data++ = GIF_TAG_POINT_REGS;
+	}
+
+	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_POINT, 0, 0, gsGlobal->PrimFogEnable,
+				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
+				0, gsGlobal->PrimContext, 0) ;
+
+	*p_data++ = GS_PRIM;
+
+	memcpy(p_data, vertices, bytes);
 }
 #endif
 
@@ -146,6 +135,36 @@ void gsKit_prim_line_goraud_3d(GSGLOBAL *gsGlobal, float x1, float y1, int iz1, 
 
 	*p_data++ = color2;
 	*p_data++ = GS_SETREG_XYZ2( ix2, iy2, iz2 );
+}
+#endif
+
+#if F_gsKit_prim_list_line_goraud_3d
+void gsKit_prim_list_line_goraud_3d(GSGLOBAL *gsGlobal, int count, const void *vertices)
+{
+	u64* p_store;
+	u64* p_data;
+	int qsize = (count*2) + 2;
+	int bytes = count * sizeof(GSPRIMPOINT);
+
+	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize*16), GIF_AD);
+
+	*p_data++ = GIF_TAG_AD(qsize);
+	*p_data++ = GIF_AD;
+
+
+	if(p_store == gsGlobal->CurQueue->last_tag)
+	{
+		*p_data++ = GIF_TAG_LINE_GORAUD(count-1);
+		*p_data++ = GIF_TAG_LINE_GORAUD_REGS;
+	}
+
+	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_LINE, 1, 0, gsGlobal->PrimFogEnable,
+				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
+				0, gsGlobal->PrimContext, 0) ;
+
+	*p_data++ = GS_PRIM;
+
+	memcpy(p_data, vertices, bytes);
 }
 #endif
 
