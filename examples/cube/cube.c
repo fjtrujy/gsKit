@@ -34,7 +34,6 @@ VECTOR camera_rotation = { 0.00f, 0.00f,   0.00f, 1.00f };
 
 void flipScreen(GSGLOBAL* gsGlobal)
 {	
-	//gsKit_set_finish(gsGlobal);
 	gsKit_queue_exec(gsGlobal);
 	gsKit_finish();
 	gsKit_sync_flip(gsGlobal);
@@ -45,19 +44,8 @@ GSGLOBAL* init_graphics()
 {
 	GSGLOBAL* gsGlobal = gsKit_init_global();
 
-	gsGlobal->Mode = gsKit_check_rom();
-	if (gsGlobal->Mode == GS_MODE_PAL){
-		gsGlobal->Height = 512;
-	} else {
-		gsGlobal->Height = 448;
-	}
-
-	gsGlobal->PSM  = GS_PSM_CT16S;
-	gsGlobal->PSMZ = GS_PSMZ_16S;
-	gsGlobal->ZBuffering = GS_SETTING_ON;
-	gsGlobal->DoubleBuffering = GS_SETTING_ON;
 	gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
-	gsGlobal->Dithering = GS_SETTING_OFF;
+	//gsGlobal->PrimAAEnable = GS_SETTING_ON;
 
 	gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
 
@@ -76,33 +64,44 @@ GSGLOBAL* init_graphics()
 
 }
 
-void gsKit_prim_triangles_gouraud_3d(GSGLOBAL *gsGlobal, int count, void* vertices)
+int gsKit_convert_xyz(vertex_f_t *output, GSGLOBAL* gsGlobal, int count, vertex_f_t *vertices)
 {
-	u64* p_store;
-	u64* p_data;
 
-	int bytes = count * sizeof(GSPRIMTRIANGLE);
-	int qsize = (count*2) + 2;
+	int z;
+	unsigned int max_z;
 
-	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize*16), GIF_AD);
+	switch(gsGlobal->PSMZ){
+		case GS_PSMZ_32:
+			z = 32;
+			break;
 
-	*p_data++ = GIF_TAG_AD(qsize);
-	*p_data++ = GIF_AD;
+		case GS_PSMZ_24:
+			z = 24;
+			break;
 
-
-	if(p_store == gsGlobal->CurQueue->last_tag)
-	{
-		*p_data++ = GIF_TAG_TRIANGLE_GOURAUD(count-1);
-		*p_data++ = GIF_TAG_TRIANGLE_GOURAUD_REGS;
+		case GS_PSMZ_16:
+		case GS_PSMZ_16S:
+			z = 16;
+			break;
+		
+		default:
+			return NULL;
 	}
 
-	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRIANGLE, 1, 0, gsGlobal->PrimFogEnable,
-				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
-				0, gsGlobal->PrimContext, 0);
+	float center_x = gsGlobal->Width/2;
+	float center_y = gsGlobal->Height/2;
+	max_z = 1 << (z - 1);
 
-	*p_data++ = GS_PRIM;
+	for (int i = 0; i < count; i++)
+	{
+		output[i].x = ((vertices[i].x + 1.0f) * center_x);
+		output[i].y = ((vertices[i].y + 1.0f) * center_y);
+		output[i].z = (unsigned int)((vertices[i].z + 1.0f) * max_z);
+	}
 
-	memcpy(p_data, vertices, bytes);
+	// End function.
+	return 0;
+
 }
 
 int render(GSGLOBAL* gsGlobal)
@@ -116,7 +115,7 @@ int render(GSGLOBAL* gsGlobal)
 
 	VECTOR *temp_vertices;
 
-	xyz_t   *verts;
+	VECTOR   *verts;
 	color_t *colors;
 
 	GSPRIMTRIANGLE *gs_vertices = (GSPRIMTRIANGLE *)memalign(128, sizeof(GSPRIMTRIANGLE) * points_count);
@@ -142,11 +141,11 @@ int render(GSGLOBAL* gsGlobal)
 	temp_vertices = memalign(128, sizeof(VECTOR) * points_count);
 
 	// Allocate register space.
-	verts  = memalign(128, sizeof(vertex_t) * points_count);
+	verts  = memalign(128, sizeof(VECTOR) * points_count);
 	colors = memalign(128, sizeof(color_t)  * points_count);
 
 	// Create the view_screen matrix.
-	create_view_screen(view_screen, 4.0f/3.0f, -3.00f, 3.00f, -3.00f, 3.00f, 1.00f, 2000.00f);
+	create_view_screen(view_screen, 4.0f/3.0f, -0.5f, 0.5f, -0.5f, 0.5f, 1.00f, 2000.00f);
 
 	if (gsGlobal->ZBuffering == GS_SETTING_ON)
 		gsKit_set_test(gsGlobal, GS_ZTEST_ON);
@@ -174,7 +173,7 @@ int render(GSGLOBAL* gsGlobal)
 		calculate_vertices(temp_vertices, points_count, c_verts, local_screen);
 
 		// Convert floating point vertices to fixed point and translate to center of screen.
-		draw_convert_xyz(verts, 2048+320, 2048-224, 16, points_count, (vertex_f_t*)temp_vertices);
+		gsKit_convert_xyz((vertex_f_t*)verts, gsGlobal, points_count, (vertex_f_t*)temp_vertices);
 
 		// Convert floating point colours to fixed point.
 		draw_convert_rgbq(colors, points_count, (vertex_f_t*)temp_vertices, (color_f_t*)c_colours, 0x80);
@@ -182,13 +181,13 @@ int render(GSGLOBAL* gsGlobal)
 		for (int i = 0, j = 0; i < points_count/3 && j < points_count; i++, j+=3)
 		{
 			gs_vertices[i].p1.rgbaq = color_to_RGBAQ(colors[j+0].r, colors[j+0].g, colors[j+0].b, colors[j+0].a);
-			gs_vertices[i].p1.xyz2 = vertex_to_XYZ2(gsGlobal, temp_vertices[j+0][0], temp_vertices[j+0][1], verts[j+0].z);
+			gs_vertices[i].p1.xyz2 = vertex_to_XYZ2(gsGlobal, verts[j+0][0], verts[j+0][1], verts[j+0][2]);
 
 			gs_vertices[i].p2.rgbaq = color_to_RGBAQ(colors[j+1].r, colors[j+1].g, colors[j+1].b, colors[j+1].a);
-			gs_vertices[i].p2.xyz2 = vertex_to_XYZ2(gsGlobal, temp_vertices[j+1][0], temp_vertices[j+1][1], verts[j+1].z);
+			gs_vertices[i].p2.xyz2 = vertex_to_XYZ2(gsGlobal, verts[j+1][0], verts[j+1][1], verts[j+1][2]);
 
 			gs_vertices[i].p3.rgbaq = color_to_RGBAQ(colors[j+2].r, colors[j+2].g, colors[j+2].b, colors[j+2].a);
-			gs_vertices[i].p3.xyz2 = vertex_to_XYZ2(gsGlobal, temp_vertices[j+2][0], temp_vertices[j+2][1], verts[j+2].z);
+			gs_vertices[i].p3.xyz2 = vertex_to_XYZ2(gsGlobal, verts[j+2][0], verts[j+2][1], verts[j+2][2]);
 		}
 
 		gsKit_clear(gsGlobal, BLACK_RGBAQ);
