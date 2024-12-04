@@ -973,12 +973,19 @@ typedef union {
 } __attribute__((packed,aligned(8))) gs_xyz_t;
 
 typedef union {
-	u64 rgbaq;
+	u32 rgba;
 	struct {
 		u8 r;
 		u8 g;
 		u8 b;
 		u8 a;
+	};
+} __attribute__((packed,aligned(8))) gs_rgba_t;
+
+typedef union {
+	u64 rgbaq;
+	struct {
+		gs_rgba_t components;
 		float q;
 	};
 } __attribute__((packed,aligned(8))) gs_rgbaq_t;
