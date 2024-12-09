@@ -253,29 +253,32 @@ void gsKit_remove_hsync_handler(int callback_id)
 #endif
 
 #if F_gsKit_clear
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 void gsKit_clear(GSGLOBAL *gsGlobal, u64 color)
 {
 	u8 PrevZState;
 	u8 strips;
 	u8 remain;
+	u8 index;
 	u32 pos;
+	gs_rgbaq vertexColor;
+	u8 slices = (gsGlobal->Width + 63)/ 64;
+	GSPRIMPOINT vertices[slices * 2];
+
+	vertexColor = rgbaq_to_RGBAQ(color);
 
 	PrevZState = gsGlobal->Test->ZTST;
 	gsKit_set_test(gsGlobal, GS_ZTEST_OFF);
-	strips = gsGlobal->Width / 64;
-	remain = gsGlobal->Width % 64;
-	pos = 0;
 
-	strips++;
-	while(strips-- > 0)
+	for (index = 0; index < slices; index++)
 	{
-		gsKit_prim_sprite(gsGlobal, pos, 0, pos + 64, gsGlobal->Height, 0, color);
-		pos += 64;
+		vertices[index * 2].xyz2 = vertex_to_XYZ2(gsGlobal, index * 64, 0, 0);
+		vertices[index * 2].rgbaq = vertexColor;
+
+		vertices[index * 2 + 1].xyz2 = vertex_to_XYZ2(gsGlobal, MIN((index + 1) * 64, gsGlobal->Width) , gsGlobal->Height, 0);
+		vertices[index * 2 + 1].rgbaq = vertexColor;
 	}
-	if(remain > 0)
-	{
-		gsKit_prim_sprite(gsGlobal, pos, 0, remain + pos, gsGlobal->Height, 0, color);
-	}
+	gsKit_prim_list_sprite_gouraud_3d(gsGlobal, slices * 2, vertices);
 
 	gsGlobal->Test->ZTST = PrevZState;
 	gsKit_set_test(gsGlobal, 0);
