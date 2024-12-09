@@ -46,6 +46,7 @@ void gsKit_prim_line_strip(GSGLOBAL *gsGlobal, float *LineStrip, int segments, i
 void gsKit_prim_line_strip_3d(GSGLOBAL *gsGlobal, float *LineStrip, int segments, u64 color);
 
 void gsKit_prim_sprite(GSGLOBAL *gsGlobal, float x1, float y1, float x2, float y2, int iz, u64 color);
+void gsKit_prim_list_sprite_gouraud_3d(GSGLOBAL *gsGlobal, int count, const GSPRIMPOINT *vertices);
 
 void gsKit_prim_triangle_3d(GSGLOBAL *gsGlobal, float x1, float y1, int iz1,
 						float x2, float y2, int iz2,
